@@ -14,11 +14,94 @@ rel=pd.read_csv('corpus/RelLabels.csv',sep='\t',encoding='utf-16')
 csyns={rel.rel_en.iloc[i]:rel.rel_color.iloc[i] for i in range(len(rel))}
 
 ########
-#pos=pd.read_csv('pos.csv',sep='\t',encoding='utf-16')
-#######
-#r=pd.read_csv('rel1.csv',sep='\t',encoding='utf-16')
 rel={rel.rel_ar.iloc[i]:rel.rel_nho.iloc[i] for i in range(len(rel))}
-##################
+#######################
+segment={'PREFIX': 'بادئة',
+         'STEM'  : 'أصل',
+         'SUFFIX': 'لاحقة'}
+Verb_form={'(I)'   : 'فَعَلَ',
+           '(II)'  : 'فَعَّلَ',
+           '(III)' : 'فَاعَلَ',
+           '(IV)'  : 'أَفْعَلَ',
+           '(IX)'  : 'إِفْعَلَّ',
+           '(V)'   : 'تَفَعَّلَ',
+           '(VI)'  : 'تَفَاعَلَ',
+           '(VII)' : 'إِنْفَعَلَ',
+           '(VIII)': 'إِفْتَعَلَ',
+           '(IX)'  : 'إِفْعَلَّ',
+           '(X)'   : 'إِسْتَفْعَلَ',
+           '(XI)'  : 'فَعْلَلَ',
+           '(XII)' : 'تَفَعْلَلَ',
+           '_' : '_'}
+verb_time = {'PERF': 'فعل ماضي',
+             'IMPF': 'فعل مضارع',
+             'IMPV': 'فعل أمر',
+             '_' : '_'}
+nominal_state={'DEF'  : 'معرفة',
+              'INDEF': 'نكرة',
+              '_' : '_'}
+verb_mood = {'MOOD:IND': 'مرفوع',
+             'MOOD:JUS': 'مجزوم',
+             'MOOD:SUBJ': 'منصوب',
+             '_' : '_'}
+special_group={'SP:<in~': 'من اخوات ان',
+               'SP:kaAd': 'من اخوات كاد',
+               'SP:kaAn': 'من اخوات ان',
+               '_' : '_'}
+nominal_case={'NOM': 'مرفوع',
+              'ACC': 'منصوب',
+              'GEN': 'مجرور',
+              '_' : '_'}
+derived_nouns={'ACT_PCPL':'اسم فاعل',
+              'PASS_PCPL':'اسم مفعول',
+              'VN':'مصدر',
+              '_':'_'}
+verb_voice={'ACT': 'مبني للمعلوم',
+            'PASS': 'مبني للمجهول',
+            '_':'_'}
+person={'1': 'واحد',
+        '2': 'اثنين',
+        '3': 'ثلاثة',
+        '_':'_'}
+gender={'M': 'مذكر',
+        'F': 'مؤنث',
+        '_':'_'}
+number={'S': 'مفرد',
+        'D': 'مثنى',
+        'P': 'جمع',
+        '_':'_'}
+prefixs ={'A:EQ+': 'همزة تسوية',
+         'A:INTG+': 'همزة استفهام',
+         'Al+': 'ال التعريف',
+         'bi+': 'باء الجر',
+         'f:CAUS+': 'فاء السببية',
+         'f:CONJ+': 'فاء العطف',
+         'f:REM+': 'فاء الإستئناف',
+         'f:RSLT+': 'فاء الشرط',
+         'f:SUP+': 'فاء الزائدة',
+         'ha+': 'هاء النداء',
+         'ka+': 'كاف الجر',
+         'l:EMPH+': 'لام التوكيد',
+         'l:IMPV+': 'لام الأمر',
+         'l:P+': 'لام الجر',
+         'l:PRP+': 'لام التعليل',
+         'sa+': 'سين المستقبل',
+         'ta+': 'تاء النداء',
+         'w:CIRC+': 'واو الظرفية',
+         'w:COM+': 'واو المعية',
+         'w:CONJ+': 'واو العطف',
+         'w:P+': 'واو الجر',
+         'w:REM+': 'واو الإستئناف',
+         'w:SUP+': 'واو الزائدة',
+         'ya+': 'ياء النداء',
+         '_': '_'}
+suffixs={'VOC:m' : 'ميم النداء',
+        'EMPH:n': 'نون التوكيد',
+        'PRON': 'ضمير متصل',
+        'l:P+': 'لام الجر',
+        '_': '_'}
+
+#######################
 def get_morph_ver(ayah_id):
     v=q[(q.sentence_id==ayah_id)&(q.location!='_')]
     wt=get_words_ids(v)
@@ -28,12 +111,26 @@ def get_morph_ver(ayah_id):
     w=[[{'text':u[i[j]]+'&zwj;','tcolor':ctags[p[i[j]]]} if j!=len(i)-1 else {'text':u[i[j]],'tcolor':ctags[p[i[j]]]}  for j in range(len(i))] for i in wt]
     ##w=[[{'text':u[j],'tcolor':ctags[p[j]]} for j in i] for i in wt]
     m=v[['uthmani_token', 'pos', 'prefix', 'suffix', 'verb_time', 'derived_nouns', 'nominal_state', 'special_group', 
-     'verb_voice', 'number', 'gender', 'verb_mood', 'nominal_case', 'lemma_ar', 'Verb_form', 'root_ar']]
+     'verb_voice', 'number', 'gender', 'verb_mood', 'nominal_case', 'lemma_ar', 'Verb_form', 'root_ar']].copy()
+    ############
+    #m.loc[m.verb_time!='wadee','verb_time']=[verb_time[i] for i in m.verb_time]
+    m['prefix']=[prefixs[i] for i in m.prefix]
+    m['suffix']=[suffixs[i] for i in m.suffix]
+    m['derived_nouns']=[derived_nouns[i] for i in m.derived_nouns]
+    m['verb_time']=[verb_time[i] for i in m.verb_time]
+    m['nominal_state']=[nominal_state[i] for i in m.nominal_state]
+    m['special_group']=[special_group[i] for i in m.special_group]
+    m['verb_voice']=[verb_voice[i] for i in m.verb_voice]
+    m['number']=[number[i] for i in m.number]
+    m['gender']=[gender[i] for i in m.gender]
+    m['verb_mood']=[verb_mood[i] for i in m.verb_mood]
+    m['nominal_case']=[nominal_case[i] for i in m.nominal_case]
+    m['Verb_form']=[nominal_case[i] for i in m.Verb_form]
+    ###############
     m=[[remove_noise(m.iloc[j].to_dict()) for j in i] for i in wt]
     parer=[{'words':w[i], 'morph':m[i]} for i in range(len(w))]
     return parer
-
-
+#######################
 def get_words_ids(v):
     wt=[]
     w=list(v.word_id)
@@ -75,6 +172,7 @@ def get_morph_det(a1,a2):
     elif a1=='derived_nouns':
         d=d1
     elif a1=='verb_time':
+        #d=verb_time[d1]
         d=d1
     elif a1=='nominal_state':
         d=d2
